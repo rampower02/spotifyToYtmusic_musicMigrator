@@ -102,4 +102,5 @@ echo Starting YouTube Music authentication...
 ytmusicapi oauth --file config\oauth.json
 
 echo YouTube Music setup completed!
+python musicMigrator.py
 pause
