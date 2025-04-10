@@ -85,7 +85,7 @@ def connectToSpotifyAPI():
         auth_manager = SpotifyOAuth(
             client_id=SPOTIFY_CLIENT_ID,
             client_secret=SPOTIFY_CLIENT_SECRET,
-            redirect_uri="http://localhost:8888/callback",
+            redirect_uri="http://127.0.0.1:8888/callback",
             scope="user-library-read playlist-read-private playlist-read-collaborative",
             cache_path=os.path.join(CONFIG_DIR, "spotify_token.json")
         )
