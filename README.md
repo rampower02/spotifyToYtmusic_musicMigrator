@@ -1,9 +1,10 @@
 # spotifyToYtmusic_musicMigrator
 INTENDED USE
-The main script can copy Spotify playlists and favorite songs as playlists on YouTube music
-It's meant to be used (on a windows machine) to migrate form using a moddedd version of Spotify to Youtube Revanced, which you can find on google (for listening to music on your phone. On pc I use SpotX).
+The main script can copy Spotify playlists and favorite songs as playlists on YouTube music.
+It's meant to be used (on a windows machine) to migrate form using a moddedd version of Spotify to Youtube Revanced, which you can find on google (for listening to music on your phone. 
+On pc I use SpotX).
 
-As the YTmusic search isn't optimized, after the program finishes to copy any playlist, it will create a text file in the 'mismatch' folder named after the playlist, where you will find which songs it was unable to copy and you can add manually to your playlists. It still creates some undetected mismatch, so you may have to modify some more songs manually.
+As the YTmusic search isn't optimized, after the program finishes to copy any playlist it will create a text file in the 'mismatch' folder named after the playlist, where you will find which songs it was unable to copy and you can add manually to your playlists. It still creates some undetected mismatch, so you may have to modify some more songs manually.
 You can also access transfer mismatch list files through the main program.
 
 THIS IS A BETA VERSION and is intended for being distributed only within my personal friend circle.  
@@ -23,4 +24,4 @@ The program uses a terminal-based interface.
 Since Youtube music handles saved content and liked songs a bit differently from Spotify and I haven't been able to code an appropriate function, liked songs from Spotify are saved in a new playlist.
 
 DISCLAIMER
-This is the beta version. I've tested the program and I can confirm it's fully operational for me up to 07/04/2025 01:43, but as this project isn't intended for large distribution, it's use is temporary, and I'm by no means a professional, if you find this on github and can be of use to you, go ahead and try it, but know it could fail (not in a destructive way).
+This is the beta version. I've tested the program and I can confirm it's fully operational on my machine up to 07/04/2025 01:43, but as this project isn't intended for large distribution, it's use is temporary, and I'm by no means a professional, if you find this on github and can be of use to you, go ahead and try it, but know it could fail (not in a destructive way).
