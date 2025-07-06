@@ -1,0 +1,3 @@
+Songs not added automatically from playlist '160 bpm - ish' to YTmusic:
+Deus Ex Machina - Crossfaith: Server returned HTTP 409: Conflict.
+Sorry, something went wrong.

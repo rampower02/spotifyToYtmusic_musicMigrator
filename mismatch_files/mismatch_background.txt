@@ -1,0 +1,4 @@
+Songs not added automatically from playlist 'Background' to YTmusic:
+Iconoclast - Antti Martikainen: Server returned HTTP 409: Conflict.
+Sorry, something went wrong.
+GEMINI -C- - Tatsh: No good match found (max similarity was 0.24)
