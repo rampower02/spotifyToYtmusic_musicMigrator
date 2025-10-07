@@ -1,0 +1,213 @@
+"""
+yt_dlp_helpers.py
+Funzioni utili per:
+ - verificare/aggiornare yt-dlp dal Python runtime
+ - estrarre cookies dal browser in formato compatibile con yt-dlp
+ - testare se una playlist/video è accessibile con/senza cookies
+
+Requisiti:
+ - Python 3.8+
+ - ffmpeg installato a sistema (per conversioni)
+ - opzionale: browser_cookie3 (se vuoi estrarre cookies automaticamente)
+"""
+
+import sys
+import subprocess
+import time
+import os
+from pathlib import Path
+import datetime
+
+# per version check
+try:
+    # Python 3.8+ preferibile
+    from importlib import metadata
+except Exception:
+    metadata = None
+
+# yt-dlp API
+try:
+    import yt_dlp as ytdlp_pkg
+    from yt_dlp import YoutubeDL
+except Exception:
+    ytdlp_pkg = None
+    YoutubeDL = None
+
+COOKIES_FILE = Path("cookies.txt")
+DOMAINS_TO_EXTRACT = ("youtube.com", "music.youtube.com")
+
+
+def ensure_package_up_to_date(package_name="yt-dlp", do_update=True):
+    """
+    Controlla versione installata (se presente). Se do_update True prova ad aggiornare con pip -U.
+    Ritorna (installed_version or None, updated_bool).
+    """
+    installed = None
+    try:
+        if metadata:
+            installed = metadata.version(package_name)
+        else:
+            # fallback
+            import pkg_resources
+            installed = pkg_resources.get_distribution(package_name).version
+    except Exception:
+        installed = None
+
+    updated = False
+    if do_update:
+        # chiamiamo pip con lo stesso interprete Python per aggiornare il pacchetto
+        try:
+            print(f"[setup] Aggiornamento {package_name} con pip...")
+            subprocess.check_call([sys.executable, "-m", "pip", "install", "-U", package_name])
+            updated = True
+            # ricarica modulo se già importato
+            if package_name == "yt-dlp":
+                import importlib
+                importlib.invalidate_caches()
+                try:
+                    importlib.reload(ytdlp_pkg)
+                except Exception:
+                    pass
+        except subprocess.CalledProcessError as e:
+            print("[setup] Errore aggiornamento pip:", e)
+    return installed, updated
+
+
+def extract_cookies_from_browser_and_save(target_file=COOKIES_FILE, domains=DOMAINS_TO_EXTRACT):
+    """
+    Prova ad usare browser_cookie3 per leggere i cookie del browser correntemente loggato
+    e salvarli in formato 'netscape' (compatibile con yt-dlp --cookies).
+    Ritorna True se ha scritto il file, False altrimenti.
+    """
+    try:
+        import browser_cookie3
+    except Exception:
+        print("[cookies] browser_cookie3 non installato. Installalo con: pip install browser-cookie3")
+        return False
+
+    try:
+        # browser_cookie3 restituisce un cookiejar compatibile con http.cookiejar
+        cj_all = browser_cookie3.load()  # legge da Chrome/Firefox/Edge a seconda di sistema
+    except Exception as e:
+        print("[cookies] errore lettura cookie dal browser:", e)
+        return False
+
+    # filtriamo solo i cookie dei domini utili
+    from http.cookiejar import MozillaCookieJar, Cookie
+    mcj = MozillaCookieJar(str(target_file))
+    added = 0
+    now_ts = int(time.time())
+
+    for cookie in cj_all:
+        # cookie.domain può essere '.youtube.com' o 'youtube.com'
+        if any(d in cookie.domain for d in domains):
+            # Trasformiamo in oggetto Cookie compatibile (se già non lo è)
+            # browser_cookie3 già fornisce cookie compatibili, quindi possiamo aggiungerli
+            mcj.set_cookie(cookie)
+            added += 1
+
+    if added == 0:
+        print("[cookies] Nessun cookie utile trovato per i domini:", domains)
+        return False
+
+    # salva in formato netscape
+    mcj.save(ignore_discard=True, ignore_expires=True)
+    print(f"[cookies] Salvati {added} cookie in {target_file}")
+    return True
+
+
+def cookies_need_refresh(cookiefile=COOKIES_FILE, required_names=None):
+    """
+    Semplice check: controlla se file esiste, e se contiene cookie non scaduti.
+    required_names: lista di nomi cookie essenziali (opzionale), es. ['SSID','SID','LOGIN_INFO']
+    Ritorna True se serve aggiornare.
+    """
+    from http.cookiejar import MozillaCookieJar
+    if not cookiefile.exists():
+        return True
+
+    mcj = MozillaCookieJar()
+    try:
+        mcj.load(cookiefile, ignore_discard=True, ignore_expires=True)
+    except Exception:
+        return True
+
+    now = time.time()
+    # se tutti i cookie sono scaduti o non ce ne sono => refresh
+    any_valid = False
+    for c in mcj:
+        # c.expires può essere None
+        if getattr(c, "expires", None) is None:
+            any_valid = True
+            break
+        if c.expires > now:
+            any_valid = True
+            break
+
+    if not any_valid:
+        return True
+
+    if required_names:
+        names = {c.name for c in mcj}
+        for rn in required_names:
+            if rn not in names:
+                return True
+
+    return False  # sembra ok
+
+
+def test_accessible_with_cookies(url, cookiefile=COOKIES_FILE, timeout=30):
+    """
+    Prova ad estrarre metadata senza scaricare (download=False).
+    Ritorna (ok:bool, error_message:str or None).
+    """
+    opts = {
+        "quiet": True,
+        "no_warnings": True,
+        "cookiefile": str(cookiefile) if cookiefile.exists() else None,
+        "format": "bestaudio/best",
+    }
+    # rimuoviamo cookiefile se None perché YoutubeDL non vuole None
+    if opts["cookiefile"] is None:
+        opts.pop("cookiefile")
+
+    try:
+        with YoutubeDL(opts) as ydl:
+            # download=False -> solo estrazione metadati
+            ydl.extract_info(url, download=False)
+        return True, None
+    except Exception as e:
+        msg = str(e)
+        return False, msg
+
+
+# Esempio di uso combinato
+def prepare_and_test(url, auto_update=True, try_extract_cookies=True):
+    # 1) assicurati che yt-dlp sia installato e aggiornato
+    print("[setup] check yt-dlp")
+    installed_version, updated = ensure_package_up_to_date("yt-dlp", do_update=auto_update)
+    print(f"[setup] versione installata: {installed_version}, aggiornato: {updated}")
+
+    # 2) controllo cookies
+    need_refresh = cookies_need_refresh(required_names=["SSID", "LOGIN_INFO"])
+    if need_refresh and try_extract_cookies:
+        print("[cookies] cookies assenti o probabilmente scaduti -> provo ad estrarre dal browser")
+        ok = extract_cookies_from_browser_and_save(COOKIES_FILE)
+        if not ok:
+            print("[cookies] estrazione automatica fallita. Puoi esportare manually cookies.txt dal browser e metterlo nella cartella.")
+    else:
+        print("[cookies] cookies sembrano presenti e validi.")
+
+    # 3) test accesso (con cookies se presenti)
+    ok, err = test_accessible_with_cookies(url, cookiefile=COOKIES_FILE)
+    if ok:
+        print("[test] accesso OK, puoi procedere al download.")
+    else:
+        print("[test] accesso FALLITO:", err)
+        print("Se il contenuto è privato, prova a rigenerare cookies o controlla che il file cookies.txt contenga i cookie di youtube/music.youtube.com")
+
+
+if __name__ == "__main__":
+    # esempio di test
+    test_url = "https://music.youtube.com/playlist?list=PLxxxxxxxxxxxxxxxx"
+    prepare_and_test(test_url, auto_update=True, try_extract_cookies=True)

@@ -1,1 +1,1 @@
-python musicMigrator.py
+python "Magician's_music.py"

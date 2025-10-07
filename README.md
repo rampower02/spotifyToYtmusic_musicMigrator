@@ -10,7 +10,7 @@ You can also access transfer mismatch list files through the main program.
 THIS IS A BETA VERSION and is intended for being distributed only within my personal friend circle.  
 
 SETUP
-In order to use the musicMigrator app you need to run "1st step - startSetup.bat" (it's recommended you run it as admin). This file executes all that's needed. Make sure to have all files downloaded in the same folder.
+In order to use the musicMigrator app you need to run "1st step - startSetup.bat" (right click and select "Run with powershell"). This file executes all that's needed. Make sure to have all files downloaded in the same folder.
 The setup file will create some folders and files, you can manually access transfer mismatch list files in the mismatch folder.
 If you haven't installed revanced manager on your phone, you can find APKs for all the followings app on google. You'll need Revanced Manager, MicroG, and ReVanced YouTube Music.
 

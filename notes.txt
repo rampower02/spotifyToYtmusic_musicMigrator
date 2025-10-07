@@ -1,0 +1,43 @@
+High-level steps
+
+Connect to APIs
+
+If Spotify not connected → connectToSpotifyAPI()
+
+If YTMusic not connected → connectToYTmusicAPI()
+
+Fetch user data
+
+Get playlists from YT (getPlaylists("YTmusic"))
+
+Optionally fetch liked songs (yt.get_liked_songs() – ytmusicapi supports it).
+
+User selection
+
+Show available playlists + liked songs count.
+
+User chooses "fav", "all", or playlist numbers.
+
+Create new playlist(s) on Spotify
+
+If playlist already exists on Spotify → ask whether to overwrite.
+
+Otherwise → sp.user_playlist_create(...).
+
+For each song in chosen playlist(s):
+
+Build search query (title + artist).
+
+Use sp.search(query, type="track", limit=10).
+
+Use your existing find_best_match(...) (adapted for Spotify results).
+
+Add found track to Spotify playlist (sp.playlist_add_items).
+
+Handle errors & mismatches
+
+Log failed matches in the same mismatch_files directory.
+
+Continue process even if some tracks fail.
+
+Notify user (beep, summary, mismatch file path).
